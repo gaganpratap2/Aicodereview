@@ -27,4 +27,4 @@ export default function AuthCallbackPage() {
       <p className="text-sm text-muted-foreground">Finishing GitHub sign-in…</p>
     </div>
   );
-}
+}   
