@@ -1,6 +1,6 @@
 "use client";
 
-import { RequireAuth } from "@/components/providers/require-auth";
+import { RequireAuth } from "@/components/provider/require-auth";
 import { AppShell } from "@/components/layout/app-shell";
 import { RepoDashboard } from "@/components/dashboard/repo-dashboard";
 
