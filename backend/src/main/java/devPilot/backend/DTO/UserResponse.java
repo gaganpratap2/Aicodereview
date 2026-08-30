@@ -3,8 +3,8 @@ package devPilot.backend.DTO;
 import java.util.UUID;
 
 public record UserResponse(
-        Long id,
-        String githubId,
+        UUID id,
+        Long githubId,
         String githubUserName,
         String displayName,
         String avatarUrl

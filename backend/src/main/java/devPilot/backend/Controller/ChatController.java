@@ -1,6 +1,5 @@
 package devPilot.backend.Controller;
 
-
 import java.util.List;
 import java.util.UUID;
 
@@ -14,15 +13,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import devPilot.backend.DTO.ChatSessionResponse;
 
-import devPilot.backend.dto.ChatMessageRequest;
-import devPilot.backend.dto.ChatMessageResponse;
-import devPilot.backend.dto.ChatSessionResponse;
-import devPilot.backend.dto.CreateChatSessionRequest;
-import devPilot.backend.security.CurrentUser;
-import devPilot.backend.services.ChatService;
+
+import devPilot.backend.DTO.ChatMessageRequest;
+import devPilot.backend.DTO.ChatMessageResponse;
+import devPilot.backend.DTO.CreateChatSessionRequest;
+import devPilot.backend.Security.CurrentUser;
+import devPilot.backend.Services.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/chat")
@@ -35,27 +36,50 @@ public class ChatController {
     @PostMapping("/sessions")
     public ResponseEntity<ChatSessionResponse> createSession(
             @Valid @RequestBody CreateChatSessionRequest request) {
+
         UUID userId = currentUser.require().getId();
-        return ResponseEntity.ok(chatService.createSession(userId, request));
+
+        return ResponseEntity.ok(
+                chatService.createSession(userId, request)
+        );
     }
 
     @GetMapping("/sessions")
-    public List<ChatSessionResponse> listSessions(@RequestParam UUID repositoryId) {
+    public ResponseEntity<List<ChatSessionResponse>> listSessions(
+            @RequestParam UUID repositoryId) {
+
         UUID userId = currentUser.require().getId();
-        return chatService.listSessions(userId, repositoryId);
+
+        return ResponseEntity.ok(
+                chatService.listSessions(userId, repositoryId)
+        );
     }
 
     @GetMapping("/sessions/{id}")
-    public List<ChatMessageResponse> getMessages(@PathVariable UUID id) {
+    public ResponseEntity<List<ChatMessageResponse>> getMessages(
+            @PathVariable UUID id) {
+
         UUID userId = currentUser.require().getId();
-        return chatService.getMessages(userId, id);
+
+        return ResponseEntity.ok(
+                chatService.getMessages(userId, id)
+        );
     }
 
-    @PostMapping(value = "/sessions/{id}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(
+            value = "/sessions/{id}/messages",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE
+    )
     public SseEmitter sendMessage(
             @PathVariable UUID id,
             @Valid @RequestBody ChatMessageRequest request) {
+
         UUID userId = currentUser.require().getId();
-        return chatService.streamReply(userId, id, request.content());
+
+        return chatService.streamReply(
+                userId,
+                id,
+                request.content()
+        );
     }
 }

@@ -3,6 +3,10 @@ package devPilot.backend.Services;
 import java.util.List;
 import java.util.UUID;
 
+import devPilot.backend.DTO.ChatMessageResponse;
+import devPilot.backend.DTO.ChatSessionResponse;
+import devPilot.backend.DTO.CreateChatSessionRequest;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -45,7 +49,7 @@ public class ChatService {
     private final CitationMapper citationMapper;
 
     @Transactional
-    public ChatSessionResponse createSession(UUID userId, CreateChatSessionRequest request) {
+    public ChatSessionResponse createSession(UUID userId, @Valid @org.checkerframework.checker.nullness.qual.MonotonicNonNull CreateChatSessionRequest request) {
         Repository repo = repoService.requireOwned(request.repositoryId(), userId);
         if (repo.getIndexStatus() != IndexStatus.READY) {
             throw new BadRequestException("Repository must be indexed before chatting");

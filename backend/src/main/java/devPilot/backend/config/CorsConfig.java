@@ -1,8 +1,10 @@
 package devPilot.backend.config;
 
+//CORS (Cross-Origin Resource Sharing) is especially important when your frontend and backend run on different origins . is asks ("Is http://localhost:3000 allowed to access http://localhost:8080?")
+
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,7 +21,9 @@ public class CorsConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins}") String allowedOrigins) {
+            @Value("${app.cors.allowed-origins}") String allowedOrigins) { //  @Value reads a value from application.properties
+        // or application.yml.
+
 
         CorsConfiguration config = new CorsConfiguration();
 

@@ -7,32 +7,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import devPilot.backend.DTO.IndexStatusResponse;
+import devPilot.backend.DTO.RepositoryResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import devPilot.backend.dto.IndexStatusResponse;
-import devPilot.backend.dto.RepositoryResponse;
 import devPilot.backend.entity.Repository;
 import devPilot.backend.entity.User;
-import devPilot.backend.exceptions.NotFoundException;
-import devPilot.backend.repository.RepositoryRepository;
 import devPilot.backend.services.github.GithubApiClient;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import devPilot.backend.dto.IndexStatusResponse;
 import devPilot.backend.dto.RepositoryResponse;
-import devPilot.backend.entity.Repository;
-import devPilot.backend.entity.User;
 import devPilot.backend.exceptions.NotFoundException;
 import devPilot.backend.repository.RepositoryRepository;
-import devPilot.backend.services.github.GithubApiClient;
 
 import lombok.RequiredArgsConstructor;
 
