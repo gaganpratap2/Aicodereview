@@ -31,9 +31,29 @@ export function ChatMessages({
   isLoading?: boolean;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(true);
+
+  // `streamText` changes on every token, so a smooth scrollIntoView here fires
+  // dozens of overlapping animations that fight each other and yank the view
+  // back down while the user is reading. Snap instead, and only while the
+  // reader is already at the bottom.
+  useEffect(() => {
+    const node = bottomRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        pinnedRef.current = entry.isIntersecting;
+      },
+      { rootMargin: "0px 0px 96px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isLoading]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!pinnedRef.current) return;
+    bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages, streamText]);
 
   if (isLoading) {

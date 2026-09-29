@@ -16,7 +16,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, user, router]);
 
-  if (isLoading) {
+  if (isLoading || isError || !user) {
     return (
       <div className="flex min-h-svh items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -25,10 +25,6 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  if (isError || !user) {
-    return null;
   }
 
   return <>{children}</>;

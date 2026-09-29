@@ -1,16 +1,16 @@
 package devPilot.backend.Security;
 
-import devPilot.backend.entity.User;
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
+
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.stringtemplate.v4.ST;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
+import devPilot.backend.entity.User;
 
 public class AppUserPrincipal implements OAuth2User {
 
@@ -28,18 +28,17 @@ public class AppUserPrincipal implements OAuth2User {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public @NonNull Map<String, Object> getAttributes() {
         return attributes;
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return AuthorityUtils.createAuthorityList(...authorities: "ROLE_USER");
-        );
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
+        return AuthorityUtils.createAuthorityList("ROLE_USER");
     }
 
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return user.getId().toString();
     }
 }

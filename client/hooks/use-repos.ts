@@ -2,17 +2,20 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { api, type Repository } from "@/lib/api";
+import { api, type IndexStatus, type Repository } from "@/lib/api";
 import { queryKeys } from "@/lib/querykey";
-import { Toast } from "@/components/ui/toast";
 import { toast } from "@/components/ui/use-toast";
-
-
 
 const INDEXING_POLL_MS = 2000;
 
-function hasIndexingRepos(repos: Repository[] | undefined) {
-  return repos?.some((repo) => repo.indexStatus === "INDEXING") ?? false;
+// A repository sitting in PENDING still has to be watched, otherwise the UI
+// never learns that the worker picked the job up and the status is frozen.
+function isActiveStatus(status: IndexStatus | undefined) {
+  return status === "PENDING" || status === "INDEXING";
+}
+
+function hasActiveRepos(repos: Repository[] | undefined) {
+  return repos?.some((repo) => isActiveStatus(repo.indexStatus)) ?? false;
 }
 
 function updateRepoInListCache(
@@ -37,7 +40,7 @@ export function useRepos() {
     },
     staleTime: 30_000,
     refetchInterval: (query) =>
-      hasIndexingRepos(query.state.data) ? INDEXING_POLL_MS : false,
+      hasActiveRepos(query.state.data) ? INDEXING_POLL_MS : false,
   });
 }
 
@@ -47,7 +50,9 @@ export function useRepository(repoId: string) {
     queryFn: () => api.getRepo(repoId),
     enabled: Boolean(repoId),
     refetchInterval: (query) =>
-      query.state.data?.indexStatus === "INDEXING" ? INDEXING_POLL_MS : false,
+      isActiveStatus(query.state.data?.indexStatus)
+        ? INDEXING_POLL_MS
+        : false,
   });
 }
 
@@ -57,7 +62,7 @@ export function useIndexStatus(repoId: string, enabled = false) {
     queryFn: () => api.indexStatus(repoId),
     enabled: Boolean(repoId) && enabled,
     refetchInterval: (query) =>
-      query.state.data?.indexStatus === "INDEXING" ? 1500 : false,
+      isActiveStatus(query.state.data?.indexStatus) ? 1500 : false,
   });
 }
 
@@ -72,14 +77,14 @@ export function useStartIndexing() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.repos.status(repo.id),
       });
-      Toast.add({
+      toast.add({
         title: "Indexing started",
         description: `Indexing ${repo.fullName}…`,
         type: "loading",
       });
     },
     onError: (error: Error) => {
-      Toast.add({
+      toast.add({
         title: "Could not start indexing",
         description: error.message,
         type: "error",
@@ -104,7 +109,7 @@ export function useRefreshRepos() {
           description: `${repos.length} repositories loaded`,
           type: "success",
         }),
-        error: (error: Error) => ({
+        error: (error: unknown) => ({
           title: "Sync failed",
           description:
             error instanceof Error ? error.message : "Could not sync repositories",

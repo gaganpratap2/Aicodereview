@@ -61,11 +61,11 @@ public class UserService {
                 .orElseGet(User::new);
 
         user.setGithubId(githubId);
-        user.setGithubUsername(login);
+        user.setGitHubUserName(login);
         user.setDisplayName(name);
         user.setAvatarUrl(avatarUrl);
         user.setAccessToken(encryptedToken);
-        user.setTokenScopes(scopes);
+        user.setTokenScope(scopes);
 
         return userRepository.save(user);
     }

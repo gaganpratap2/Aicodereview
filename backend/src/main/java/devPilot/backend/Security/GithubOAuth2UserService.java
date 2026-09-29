@@ -29,9 +29,7 @@ public class GithubOAuth2UserService
                 userRequest.getAccessToken().getTokenValue();
 
         String scopes =
-                userRequest.getAccessToken().getScopes() != null
-                        ? String.join(",", userRequest.getAccessToken().getScopes())
-                        : "read:user,repo";
+                String.join(",", userRequest.getAccessToken().getScopes());
 
         User user = userService.upsertFromGithub(
                 githubUser.getAttributes(),

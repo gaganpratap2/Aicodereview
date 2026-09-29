@@ -1,15 +1,40 @@
 "use client"
 
 import * as React from "react"
-// @ts-expect-error The Radix package is provided at runtime but may not expose declarations.
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 
-const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
+function DropdownMenuTrigger({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"button"> &
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Trigger>) {
+  return (
+    <DropdownMenuPrimitive.Trigger asChild>
+      {useRender({
+        defaultTagName: "button",
+        props: mergeProps<"button">(
+          {
+            type: "button",
+            className: cn(className),
+          },
+          props
+        ),
+        render,
+        state: {
+          slot: "menu-trigger",
+        },
+      })}
+    </DropdownMenuPrimitive.Trigger>
+  )
+}
 
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 

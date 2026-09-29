@@ -10,7 +10,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
-import devPilot.backend.dto.CitationDto;
+import devPilot.backend.DTO.CitationDto;
 import lombok.RequiredArgsConstructor;
 
 /**

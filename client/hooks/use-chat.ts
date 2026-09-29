@@ -5,12 +5,12 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, type ChatMessage } from "@/lib/api";
-import { queryKeys } from "@/lib/query-keys";
-import { streamChatMessage } from "@/lib/stream-chat";
-import { toast } from "@/components/ui/toast";
+import { queryKeys } from "@/lib/querykey";
+import { streamChatMessage } from "@/lib/streamchat";
+import { toast } from "@/components/ui/use-toast";
 
 export function useChatSessions(repositoryId: string, enabled = true) {
   return useQuery({
@@ -54,16 +54,35 @@ export function useStreamChat(sessionId: string | null) {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  // A ref, not state: two Enter presses in the same tick both read the
+  // `streaming` state before React re-renders, so a state guard lets the
+  // second send through and desyncs the stream.
+  const streamingRef = useRef(false);
+
+  const resetStreamState = useCallback(() => {
+    streamingRef.current = false;
+    setStreaming(false);
+    setStreamText("");
+  }, []);
+
+  // Switching sessions must cancel the in-flight stream, otherwise the previous
+  // answer keeps rendering (and its `finally` resets state) under the new one.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      streamingRef.current = false;
+    };
+  }, [sessionId]);
 
   const send = useCallback(
     async (content: string) => {
-      if (!sessionId || !content.trim() || streaming) return;
+      if (!sessionId || !content.trim() || streamingRef.current) return;
 
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      const optimisticId = `temp-${Date.now()}`;
+      const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const optimistic: ChatMessage = {
         id: optimisticId,
         role: "USER",
@@ -72,13 +91,21 @@ export function useStreamChat(sessionId: string | null) {
         createdAt: new Date().toISOString(),
       };
 
+      // Stop an in-flight refetch from clobbering the optimistic message.
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.chat.messages(sessionId),
+      });
+
       queryClient.setQueryData<ChatMessage[]>(
         queryKeys.chat.messages(sessionId),
         (prev) => [...(prev ?? []), optimistic]
       );
 
+      streamingRef.current = true;
       setStreaming(true);
       setStreamText("");
+
+      let sawError = false;
 
       try {
         await streamChatMessage(sessionId, content.trim(), {
@@ -102,9 +129,20 @@ export function useStreamChat(sessionId: string | null) {
             );
             setStreamText("");
           },
+          onDone: () => {
+            setStreamText("");
+            // Reconcile with the server in case the final frame was lost.
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.chat.messages(sessionId),
+            });
+          },
+          onError: () => {
+            sawError = true;
+          },
         });
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
+        sawError = true;
         toast.add({
           title: "Message failed",
           description: err instanceof Error ? err.message : "Unknown error",
@@ -114,18 +152,23 @@ export function useStreamChat(sessionId: string | null) {
           queryKeys.chat.messages(sessionId),
           (prev) => (prev ?? []).filter((m) => m.id !== optimisticId)
         );
-        setStreamText("");
       } finally {
+        if (sawError) {
+          setStreamText("");
+        }
+        streamingRef.current = false;
         setStreaming(false);
       }
     },
-    [sessionId, streaming, queryClient]
+    [sessionId, queryClient]
   );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
-    setStreaming(false);
-  }, []);
+    // Aborting returns early in `send`, so the partial answer has to be
+    // cleared here or it is left on screen with no way to dismiss it.
+    resetStreamState();
+  }, [resetStreamState]);
 
   return { send, stop, streaming, streamText };
 }

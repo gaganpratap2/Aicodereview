@@ -3,7 +3,7 @@
 import { use } from "react";
 
 import {ChatView}  from "@/components/chat/chat-view";
-import { RequireAuth } from "@/components/providers/require-auth";
+import { RequireAuth } from "@/components/provider/require-auth";
 
 export default function ChatPage({
   params,
@@ -14,7 +14,10 @@ export default function ChatPage({
 
   return (
     <RequireAuth>
-      <ChatView repoId={repoId} />
+      {/* Keying on repoId remounts the view on navigation so per-repo local
+          state (selected session, auto-create guard) can never leak across
+          repositories. */}
+      <ChatView key={repoId} repoId={repoId} />
     </RequireAuth>
   );
 }

@@ -12,7 +12,7 @@ import { getGithubLoginUrl } from "@/lib/api";
 export default function HomePage() {
   return (
     <div className="relative min-h-svh overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(from_var(--primary)_l_c_h/0.12),transparent_55%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(var(--primary)/0.12),transparent_55%)]" />
       <header className="relative z-10 mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
         <BrandMark />
         <div className="flex items-center gap-2">

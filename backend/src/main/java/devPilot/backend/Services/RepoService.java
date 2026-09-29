@@ -14,12 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import devPilot.backend.entity.Repository;
 import devPilot.backend.entity.User;
-import devPilot.backend.services.github.GithubApiClient;
+import devPilot.backend.Services.github.GithubApiClient;
 
-import devPilot.backend.dto.IndexStatusResponse;
-import devPilot.backend.dto.RepositoryResponse;
-import devPilot.backend.exceptions.NotFoundException;
-import devPilot.backend.repository.RepositoryRepository;
+import devPilot.backend.DTO.IndexStatusResponse;
+import devPilot.backend.DTO.RepositoryResponse;
+import devPilot.backend.Exception.NotFoundException;
+import devPilot.backend.Repository.RepositoryRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +32,7 @@ public class RepoService {
 
     @Transactional
     public List<RepositoryResponse> syncAndListRepos(UUID userId) {
-        User user = userService.requiredById(userId);
+        User user = userService.requireById(userId);
         String token = userService.decryptAccessToken(user);
         List<Map<String, Object>> remoteRepos = gitHubApiClient.listUserRepos(token);
 

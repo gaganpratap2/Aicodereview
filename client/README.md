@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevPilot client
 
-## Getting Started
+Next.js frontend for DevPilot. Connects to the Spring Boot backend for GitHub
+OAuth, repository indexing, and streaming chat over your own repositories.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20.9+ (developed against Node 22)
+- A running DevPilot backend on port `8081`
+
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # then edit if the backend is not on :8081
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app is served at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8081` | Base URL of the backend API |
 
-## Learn More
+Because the variable is prefixed with `NEXT_PUBLIC_`, it is inlined into the
+client bundle at build time. Restart the dev server after changing it.
 
-To learn more about Next.js, take a look at the following resources:
+## Sign-in
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sign-in starts at the backend, which redirects to GitHub. The OAuth app's
+authorization callback URL must be:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+http://localhost:8081/login/oauth2/code/github
+```
 
-## Deploy on Vercel
+The backend owns the `DEVPILOT_SESSION` cookie, so the frontend only needs the
+`devpilot_auth` hint cookie that `proxy.ts` uses for optimistic route guarding.
+The backend session is always the authority.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Commands
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npx tsc --noEmit` | Type-check without emitting |
+
+## Theming
+
+Dark mode is driven by `next-themes` writing a `.dark` class on `<html>`. All
+`dark:` variants in this project are therefore class-scoped (see the
+`@custom-variant` rule in `app/globals.css`) and do not follow the OS setting
+unless the user picks "System".

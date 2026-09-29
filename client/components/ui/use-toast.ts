@@ -13,17 +13,16 @@ const TOAST_REMOVE_DELAY = 1000000
 
 type ToasterToast = ToastProps & {
   id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
+  title?: string
+  description?: string
   action?: ToastActionElement
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
+type ActionType =
+  | "ADD_TOAST"
+  | "UPDATE_TOAST"
+  | "DISMISS_TOAST"
+  | "REMOVE_TOAST"
 
 let count = 0
 
@@ -32,23 +31,21 @@ function genId() {
   return count.toString()
 }
 
-type ActionType = typeof actionTypes
-
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
+      type: Extract<ActionType, "ADD_TOAST">
       toast: ToasterToast
     }
   | {
-      type: ActionType["UPDATE_TOAST"]
+      type: Extract<ActionType, "UPDATE_TOAST">
       toast: Partial<ToasterToast>
     }
   | {
-      type: ActionType["DISMISS_TOAST"]
+      type: Extract<ActionType, "DISMISS_TOAST">
       toastId?: ToasterToast["id"]
     }
   | {
-      type: ActionType["REMOVE_TOAST"]
+      type: Extract<ActionType, "REMOVE_TOAST">
       toastId?: ToasterToast["id"]
     }
 
@@ -142,6 +139,51 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+type ToastType = "default" | "loading" | "success" | "error"
+
+type ToastMessage =
+  | string
+  | {
+      title?: string
+      description?: string
+      action?: ToastActionElement
+      type?: ToastType
+    }
+
+type ToastPromiseOptions<T> = {
+  loading?: ToastMessage
+  success?: ToastMessage | ((data: T) => ToastMessage)
+  error?: ToastMessage | ((error: unknown) => ToastMessage)
+}
+
+function resolveMessage<T>(
+  message: ToastMessage | ((value: T) => ToastMessage),
+  value: T
+): ToastMessage {
+  return typeof message === "function" ? message(value) : message
+}
+
+function dismissToast(toastId: string) {
+  dispatch({ type: "DISMISS_TOAST", toastId })
+}
+
+function toVariant(type?: ToastType): "default" | "destructive" {
+  return type === "error" ? "destructive" : "default"
+}
+
+function toProps(message: ToastMessage): {
+  title?: string
+  description?: string
+  action?: ToastActionElement
+  variant: "default" | "destructive"
+} {
+  if (typeof message === "string") {
+    return { title: message, variant: toVariant(undefined) }
+  }
+  const { type, ...rest } = message
+  return { ...rest, variant: toVariant(type) }
+}
+
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -171,6 +213,81 @@ function toast({ ...props }: Toast) {
   }
 }
 
+function toastAdd(message: ToastMessage) {
+  toast(toProps(message))
+}
+
+function toastPromise<T>(
+  promise: Promise<T>,
+  options: ToastPromiseOptions<T> = {}
+): Promise<T> {
+  const id = genId()
+
+  if (options.loading) {
+    const { variant, ...rest } = toProps(options.loading)
+    dispatch({
+      type: "ADD_TOAST",
+      toast: {
+        ...rest,
+        id,
+        variant,
+        open: true,
+        onOpenChange: (open) => {
+          if (!open) dismissToast(id)
+        },
+      },
+    })
+  }
+
+  promise
+    .then((data) => {
+      const message = options.success
+        ? resolveMessage(options.success, data)
+        : null
+      if (!message) {
+        dispatch({ type: "DISMISS_TOAST", toastId: id })
+        return
+      }
+      const { variant, ...rest } = toProps(message)
+      dispatch({
+        type: "UPDATE_TOAST",
+        toast: {
+          ...rest,
+          id,
+          variant,
+          open: true,
+          onOpenChange: (open) => {
+            if (!open) dismissToast(id)
+          },
+        },
+      })
+    })
+    .catch((error: unknown) => {
+      const message = options.error ? resolveMessage(options.error, error) : null
+      if (!message) {
+        dispatch({ type: "DISMISS_TOAST", toastId: id })
+        return
+      }
+      const { variant, ...rest } = toProps(message)
+      dispatch({
+        type: "UPDATE_TOAST",
+        toast: {
+          ...rest,
+          id,
+          variant,
+          open: true,
+          onOpenChange: (open) => {
+            if (!open) dismissToast(id)
+          },
+        },
+      })
+    })
+
+  return promise
+}
+
+const toastApi = Object.assign(toast, { add: toastAdd, promise: toastPromise })
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -191,4 +308,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { useToast, toastApi as toast }

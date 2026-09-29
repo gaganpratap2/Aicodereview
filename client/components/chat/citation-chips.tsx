@@ -14,7 +14,16 @@ export function citationHref(repo: Repository, citation: Citation) {
             : ""
         }`
       : "";
-  return `https://github.com/${repo.fullName}/blob/${repo.defaultBranch}/${citation.filePath}${line}`;
+  // GitHub paths may legally contain `#`, `?` and spaces, so each path segment
+  // must be percent-encoded before it is interpolated into the URL.
+  const path = citation.filePath
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+
+  return `https://github.com/${repo.fullName}/blob/${encodeURIComponent(
+    repo.defaultBranch
+  )}/${path}${line}`;
 }
 
 export function CitationChips({
